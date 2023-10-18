@@ -127,20 +127,17 @@ def build_graph(kmer_dict: Dict[str, int]) -> nx.DiGraph:
     :param kmer_dict: A dictionary with k-mers as keys and their occurrences as values.
     :return: A NetworkX DiGraph representing the k-mer graph.
     """
-    # Create a directed graph
     graph = nx.DiGraph()
     
     for kmer, count in kmer_dict.items():
         prefix = kmer[:-1]
         suffix = kmer[1:]
-        
-        # Check if nodes exist, and add them if not
+
         if not graph.has_node(prefix):
             graph.add_node(prefix)
         if not graph.has_node(suffix):
             graph.add_node(suffix)
         
-        # Add an edge with the weight
         if graph.has_edge(prefix, suffix):
             graph[prefix][suffix]['weight'] += count
         else:
@@ -260,7 +257,6 @@ def get_contigs(graph: DiGraph, starting_nodes: List[str], ending_nodes: List[st
     for start_node in starting_nodes:
         for end_node in ending_nodes:
             if nx.has_path(graph, start_node, end_node):
-                # Find all simple paths from start to end
                 paths = list(nx.all_simple_paths(graph, start_node, end_node))
                 for path in paths:
                     contig = ''.join(path)
@@ -270,13 +266,18 @@ def get_contigs(graph: DiGraph, starting_nodes: List[str], ending_nodes: List[st
     return contigs
 
 
-def save_contigs(contigs_list: List[str], output_file: Path) -> None:
-    """Write all contigs in fasta format
+def save_contigs(contigs_list: List[tuple[str, int]], output_file: Path) -> None:
+    """Write all contigs in FASTA format.
 
-    :param contig_list: (list) List of [contiguous sequence and their length]
-    :param output_file: (Path) Path to the output file
+    :param contigs_list: List of (contig, contig length).
+    :param output_file: Path to the output file.
     """
-    pass
+    with open(output_file, 'w') as file:
+        for i, (contig, length) in enumerate(contigs_list):
+            file.write(f'>contig_{i} len={length}\n')
+            wrapped_contig = textwrap.fill(contig, width=80)
+            file.write(wrapped_contig)
+            file.write('\n')
 
 
 def draw_graph(graph: DiGraph, graphimg_file: Path) -> None: # pragma: no cover
