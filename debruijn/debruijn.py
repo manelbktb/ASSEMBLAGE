@@ -243,19 +243,31 @@ def get_sink_nodes(graph: DiGraph) -> List[str]:
     :param graph: (nx.DiGraph) A directed graph object
     :return: (list) A list of all nodes without successors
     """
-    sink_nodes = [node for node in graph.nodes() if not any(graph.predecessors(node))]
+    ending_nodes = [node for node in graph.nodes() if not any(graph.predecessors(node))]
     return sink_nodes
 
 
-def get_contigs(graph: DiGraph, starting_nodes: List[str], ending_nodes: List[str]) -> List:
+def get_contigs(graph: DiGraph, starting_nodes: List[str], ending_nodes: List[str]) -> List[tuple[str, int]]:
     """Extract the contigs from the graph
 
-    :param graph: (nx.DiGraph) A directed graph object 
+    :param graph: (nx.DiGraph) A directed graph object
     :param starting_nodes: (list) A list of nodes without predecessors
     :param ending_nodes: (list) A list of nodes without successors
     :return: (list) List of [contiguous sequence and their length]
     """
-    pass
+    contigs = []
+
+    for start_node in starting_nodes:
+        for end_node in ending_nodes:
+            if nx.has_path(graph, start_node, end_node):
+                # Find all simple paths from start to end
+                paths = list(nx.all_simple_paths(graph, start_node, end_node))
+                for path in paths:
+                    contig = ''.join(path)
+                    contig_length = len(contig)
+                    contigs.append((contig, contig_length))
+
+    return contigs
 
 
 def save_contigs(contigs_list: List[str], output_file: Path) -> None:
@@ -296,7 +308,7 @@ def draw_graph(graph: DiGraph, graphimg_file: Path) -> None: # pragma: no cover
 def main() -> None: # pragma: no cover
     """
     Main program function
-    """
+    """v            bvbfggggggggggggggggggggggg 
     # Get arguments
     args = get_arguments()
 
