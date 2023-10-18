@@ -233,7 +233,8 @@ def get_starting_nodes(graph: DiGraph) -> List[str]:
     :param graph: (nx.DiGraph) A directed graph object
     :return: (list) A list of all nodes without predecessors
     """
-    pass
+    starting_nodes = [node for node in graph.nodes() if not any(graph.predecessors(node))]
+    return starting_nodes
 
 
 def get_sink_nodes(graph: DiGraph) -> List[str]:
@@ -242,7 +243,8 @@ def get_sink_nodes(graph: DiGraph) -> List[str]:
     :param graph: (nx.DiGraph) A directed graph object
     :return: (list) A list of all nodes without successors
     """
-    pass
+    sink_nodes = [node for node in graph.nodes() if not any(graph.predecessors(node))]
+    return sink_nodes
 
 
 def get_contigs(graph: DiGraph, starting_nodes: List[str], ending_nodes: List[str]) -> List:
