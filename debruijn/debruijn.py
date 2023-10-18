@@ -17,6 +17,7 @@ import argparse
 import os
 import sys
 from pathlib import Path
+import networkx as nx
 from networkx import DiGraph, all_simple_paths, lowest_common_ancestor, has_path, random_layout, draw, spring_layout
 import matplotlib
 from operator import itemgetter
@@ -84,34 +85,68 @@ def read_fastq(fastq_file: Path) -> Iterator[str]:
     :param fastq_file: (Path) Path to the fastq file.
     :return: A generator object that iterate the read sequences. 
     """
-    pass
+    with open(fastq_file,'r') as fastq:
+        for line in fastq:
+            yield(next(fastq).strip())
+            next(fastq)
+            next(fastq)
 
 
 def cut_kmer(read: str, kmer_size: int) -> Iterator[str]:
     """Cut read into kmers of size kmer_size.
     
     :param read: (str) Sequence of a read.
-    :return: A generator object that provides the kmers (str) of size kmer_size.
+    :param kmer_size: (int) Length of the k-mers.
+    :return: A generator object that provides the k-mers (str) of size kmer_size.
     """
-    pass
+    for i in range(len(read) - kmer_size + 1):
+        kmer = read[i:i + kmer_size]
+        yield kmer
 
 
-def build_kmer_dict(fastq_file: Path, kmer_size:int) -> Dict[str, int]:
-    """Build a dictionnary object of all kmer occurrences in the fastq file
 
-    :param fastq_file: (str) Path to the fastq file.
-    :return: A dictionnary object that identify all kmer occurrences.
+def build_kmer_dict(fastq_file: Path, kmer_size: int) -> Dict[str, int]:
+    """Build a dictionary of all k-mer occurrences in the FASTQ file.
+
+    :param fastq_file: (Path) Path to the FASTQ file.
+    :param kmer_size: (int) Length of the k-mers.
+    :return: A dictionary with k-mers as keys and their occurrences as values.
     """
-    pass
+    kmer_counts = {}
+    
+    for sequence in read_fastq(fastq_file):
+        for kmer in cut_kmer(sequence, kmer_size):
+            kmer_counts[kmer] = kmer_counts.get(kmer, 0) + 1
+
+    return kmer_counts
 
 
-def build_graph(kmer_dict: Dict[str, int]) -> DiGraph:
-    """Build the debruijn graph
+def build_graph(kmer_dict: Dict[str, int]) -> nx.DiGraph:
+    """Build a directed and weighted graph representing k-mer prefixes and suffixes.
 
-    :param kmer_dict: A dictionnary object that identify all kmer occurrences.
-    :return: A directed graph (nx) of all kmer substring and weight (occurrence).
+    :param kmer_dict: A dictionary with k-mers as keys and their occurrences as values.
+    :return: A NetworkX DiGraph representing the k-mer graph.
     """
-    pass
+    # Create a directed graph
+    graph = nx.DiGraph()
+    
+    for kmer, count in kmer_dict.items():
+        prefix = kmer[:-1]
+        suffix = kmer[1:]
+        
+        # Check if nodes exist, and add them if not
+        if not graph.has_node(prefix):
+            graph.add_node(prefix)
+        if not graph.has_node(suffix):
+            graph.add_node(suffix)
+        
+        # Add an edge with the weight
+        if graph.has_edge(prefix, suffix):
+            graph[prefix][suffix]['weight'] += count
+        else:
+            graph.add_edge(prefix, suffix, weight=count)
+    
+    return graph
 
 
 def remove_paths(graph: DiGraph, path_list: List[List[str]], delete_entry_node: bool, delete_sink_node: bool) -> DiGraph:
