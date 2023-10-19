@@ -164,12 +164,10 @@ def remove_paths(graph: DiGraph, path_list: List[List[str]], delete_entry_node: 
                 modified_graph.remove_node(node)
              break
         if delete_entry_node:
-            # Remove the first node of the path
             first_node = path[0]
             modified_graph.remove_node(first_node)
 
         if delete_sink_node:
-            # Remove the last node of the path
             last_node = path[-1]
             modified_graph.remove_node(last_node)
         else:
@@ -193,8 +191,30 @@ def select_best_path(graph: DiGraph, path_list: List[List[str]], path_length: Li
     :param delete_sink_node: (boolean) True->We remove the last node of a path
     :return: (nx.DiGraph) A directed graph object
     """
-    pass
-
+    weight_stddev = statistics.stdev(weight_avg_list)
+    
+    length_stddev = statistics.stdev(path_length)
+    
+    best_path_index = None
+    
+    if weight_stddev > 0:
+        best_path_index = weight_avg_list.index(max(weight_avg_list))
+    elif length_stddev > 0:
+        best_path_index = path_length_list.index(max(path_length))
+    else:
+        best_path_index = random.randint(0, len(path_list) - 1)
+    
+    modified_graph = graph.copy()
+    for i, path in enumerate(path_list):
+        if i != best_path_index:
+            if delete_entry_node:
+                first_node = path[0]
+                modified_graph.remove_node(first_node)
+            if delete_sink_node:
+                last_node = path[-1]
+                modified_graph.remove_node(last_node)
+    
+    return modified_graph
 
 def path_average_weight(graph: DiGraph, path: List[str]) -> float:
     """Compute the weight of a path
@@ -280,12 +300,14 @@ def get_contigs(graph: DiGraph, starting_nodes: List[str], ending_nodes: List[st
         for end_node in ending_nodes:
             if nx.has_path(graph, start_node, end_node):
                 paths = list(nx.all_simple_paths(graph, start_node, end_node))
-                for path in paths:
-                    contig = ''.join(path)
-                    contig_length = len(contig)
-                    contigs.append((contig, contig_length))
+                contig = paths[0][0]
+                for path in paths[0][1:]:
+                    contig += path[-1]
+            contig_length = len(contig)
+            contigs.append((contig, contig_length))
 
     return contigs
+ 
 
 
 def save_contigs(contigs_list: List[tuple[str, int]], output_file: Path) -> None:
